@@ -85,6 +85,8 @@ public:
 	void AcknowledgeProblem(const String& author, const String& comment, AcknowledgementType type, bool notify = true, double expiry = 0, const MessageOrigin::Ptr& origin = MessageOrigin::Ptr());
 	void ClearAcknowledgement(const MessageOrigin::Ptr& origin = MessageOrigin::Ptr());
 
+	int GetSeverity(void);
+
 	/* Checks */
 	intrusive_ptr<CheckCommand> GetCheckCommand(void) const;
 	TimePeriod::Ptr GetCheckPeriod(void) const;

@@ -146,6 +146,56 @@ Endpoint::Ptr Checkable::GetCommandEndpoint(void) const
 	return Endpoint::GetByName(GetCommandEndpointRaw());
 }
 
+#define FLAG_DOWNTIME	1
+#define FLAG_ACK 	2
+#define FLAG_HOST_ISSUE	4
+#define FLAG_NONE	8
+#define SHIFT_FLAGS	4
+
+int Checkable::GetSeverity(void)
+{
+	int severity = 0;
+
+	Host::Ptr host;
+	Service::Ptr service;
+	tie(host, service) = GetHostService(this);
+
+	CheckableType checkableType = CheckableHost;
+	if (service)
+		checkableType = CheckableService;
+
+	ServiceState state = GetStateRaw();
+	int mapState = 0;
+
+	if (state == ServiceOK) {
+		mapState = 0; //OK/Up
+	} else if (state == ServiceWarning) {
+		if (checkableType == CheckableHost)
+			mapState = 0; //Up
+		else
+			mapState = 2;
+	} else if (state == ServiceUnknown) {
+		if (checkableType == CheckableHost)
+			mapState = 8; //Down
+		else
+			mapState = 4;
+	} else if (state == ServiceCritical) {
+		mapState = 8; //Critical/Down
+	}
+
+	severity = mapState << SHIFT_FLAGS;
+
+	if (IsInDowntime()) {
+		severity |= FLAG_DOWNTIME;
+	} else if (IsAcknowledged()) {
+		severity |= FLAG_ACK;
+	} else {
+		severity |= FLAG_NONE;
+	}
+
+	return severity;
+}
+
 void Checkable::NotifyFixedDowntimeStart(const Downtime::Ptr& downtime)
 {
 	if (!downtime->GetFixed())
