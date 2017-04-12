@@ -101,6 +101,7 @@ void Checkable::AddGroup(const String& name)
 	groups->Add(name);
 }
 
+//TODO: make this a const function getter
 AcknowledgementType Checkable::GetAcknowledgement(void)
 {
 	AcknowledgementType avalue = static_cast<AcknowledgementType>(GetAcknowledgementRaw());
@@ -117,9 +118,9 @@ AcknowledgementType Checkable::GetAcknowledgement(void)
 	return avalue;
 }
 
-bool Checkable::IsAcknowledged(void)
+bool Checkable::IsAcknowledged(void) const
 {
-	return GetAcknowledgement() != AcknowledgementNone;
+	return GetAcknowledgementRaw() != AcknowledgementNone;
 }
 
 void Checkable::AcknowledgeProblem(const String& author, const String& comment, AcknowledgementType type, bool notify, double expiry, const MessageOrigin::Ptr& origin)
@@ -152,7 +153,7 @@ Endpoint::Ptr Checkable::GetCommandEndpoint(void) const
 #define FLAG_NONE	8
 #define SHIFT_FLAGS	4
 
-int Checkable::GetSeverity(void)
+int Checkable::GetSeverity(void) const
 {
 	int severity = 0;
 
@@ -164,7 +165,9 @@ int Checkable::GetSeverity(void)
 	if (service)
 		checkableType = CheckableService;
 
+	ObjectLock olock(this);
 	ServiceState state = GetStateRaw();
+
 	int mapState = 0;
 
 	if (state == ServiceOK) {
@@ -192,6 +195,8 @@ int Checkable::GetSeverity(void)
 	} else {
 		severity |= FLAG_NONE;
 	}
+
+	olock.Unlock();
 
 	return severity;
 }
